@@ -1,0 +1,40 @@
+{
+  "name": "busy-day",
+  "description": "Three interleaved sessions: permission flow, failure, compact cycle, clean end. Also the simulate/README scenario.",
+  "events": [
+    { "ts": 1000,  "sessionId": "s1", "event": "SessionStart", "source": "startup", "cwd": "/repos/authsvc" },
+    { "ts": 2000,  "sessionId": "s1", "event": "UserPromptSubmit" },
+    { "ts": 3000,  "sessionId": "s1", "event": "PreToolUse", "toolName": "Bash" },
+    { "ts": 4000,  "sessionId": "s2", "event": "SessionStart", "source": "startup", "cwd": "/repos/blog" },
+    { "ts": 5000,  "sessionId": "s1", "event": "Notification", "notif": "permission_prompt", "message": "Claude needs your permission to use Bash" },
+    { "ts": 6000,  "sessionId": "s2", "event": "PreToolUse", "toolName": "Edit" },
+    { "ts": 7000,  "sessionId": "s1", "event": "PreToolUse", "toolName": "Bash" },
+    { "ts": 8000,  "sessionId": "s3", "event": "SessionStart", "source": "startup", "cwd": "/repos/infra" },
+    { "ts": 9000,  "sessionId": "s2", "event": "Stop" },
+    { "ts": 10000, "sessionId": "s1", "event": "StopFailure", "message": "rate_limit" },
+    { "ts": 11000, "sessionId": "s3", "event": "PreCompact" },
+    { "ts": 12000, "sessionId": "s3", "event": "PostCompact" },
+    { "ts": 13000, "sessionId": "s1", "event": "UserPromptSubmit" },
+    { "ts": 14000, "sessionId": "s2", "event": "SessionEnd", "reason": "logout" },
+    { "ts": 15000, "sessionId": "s3", "event": "Stop" },
+    { "ts": 16000, "sessionId": "s1", "event": "Stop" }
+  ],
+  "expect": [
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working", "s2": "working" },
+    { "s1": "permission_wait", "s2": "working" },
+    { "s1": "permission_wait", "s2": "working" },
+    { "s1": "working", "s2": "working" },
+    { "s1": "working", "s2": "working", "s3": "working" },
+    { "s1": "working", "s2": "your_turn", "s3": "working" },
+    { "s1": "failed", "s2": "your_turn", "s3": "working" },
+    { "s1": "failed", "s2": "your_turn", "s3": "compacting" },
+    { "s1": "failed", "s2": "your_turn", "s3": "working" },
+    { "s1": "working", "s2": "your_turn", "s3": "working" },
+    { "s1": "working", "s2": "ended", "s3": "working" },
+    { "s1": "working", "s2": "ended", "s3": "your_turn" },
+    { "s1": "your_turn", "s2": "ended", "s3": "your_turn" }
+  ]
+}

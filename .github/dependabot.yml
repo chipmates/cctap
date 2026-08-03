@@ -1,0 +1,9 @@
+version: 2
+
+updates:
+  # Actions are pinned to commit SHAs, which nobody refreshes by hand. This is what
+  # keeps a pinned SHA from quietly aging into an unpatched one.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
