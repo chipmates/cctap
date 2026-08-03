@@ -1,0 +1,28 @@
+{
+  "name": "idle-upgrade-only",
+  "description": "R2: idle_prompt upgrades working to your_turn but never downgrades permission_wait; R3 user prompt resets.",
+  "events": [
+    { "ts": 1000,  "sessionId": "s1", "event": "SessionStart", "source": "startup", "cwd": "/repos/authsvc" },
+    { "ts": 2000,  "sessionId": "s1", "event": "UserPromptSubmit" },
+    { "ts": 3000,  "sessionId": "s1", "event": "PreToolUse", "toolName": "Bash" },
+    { "ts": 4000,  "sessionId": "s1", "event": "Notification", "notif": "permission_prompt", "message": "Claude needs your permission to use Bash" },
+    { "ts": 5000,  "sessionId": "s1", "event": "Notification", "notif": "idle_prompt", "message": "Claude is waiting for your input" },
+    { "ts": 6000,  "sessionId": "s1", "event": "UserPromptSubmit" },
+    { "ts": 7000,  "sessionId": "s1", "event": "Stop" },
+    { "ts": 8000,  "sessionId": "s1", "event": "Notification", "notif": "idle_prompt", "message": "Claude is waiting for your input" },
+    { "ts": 9000,  "sessionId": "s1", "event": "UserPromptSubmit" },
+    { "ts": 10000, "sessionId": "s1", "event": "Notification", "notif": "idle_prompt", "message": "Claude is waiting for your input" }
+  ],
+  "expect": [
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "permission_wait" },
+    { "s1": "permission_wait" },
+    { "s1": "working" },
+    { "s1": "your_turn" },
+    { "s1": "your_turn" },
+    { "s1": "working" },
+    { "s1": "your_turn" }
+  ]
+}
