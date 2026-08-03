@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- A shell prompt with a red block cursor: a session waiting on you. -->
+  <rect width="256" height="256" rx="56" fill="#0A0F1E"/>
+  <path d="M73 88 L112 128 L73 168" fill="none" stroke="#E8E6E1" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="149" y="88" width="48" height="80" rx="9" fill="#FF4D4F"/>
+</svg>

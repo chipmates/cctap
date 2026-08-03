@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.os }} node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    # The suite runs in seconds; this is the backstop for a wedged runner.
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [20, 22, 24]
+    env:
+      # No test may fire a desktop banner or spawn an external command.
+      CCTAP_NOTIFY: 'off'
+      CCTAP_NO_EXEC: '1'
+      # Hosted runners are 2-core and cold-start node several times slower than a laptop,
+      # so the waits that mean "a daemon should be up by now" get room. Local runs stay
+      # at 1: this is headroom for a slow machine, never cover for a race.
+      CCTAP_TEST_SLACK: '4'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm test

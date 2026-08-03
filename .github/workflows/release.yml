@@ -1,0 +1,37 @@
+name: Release
+
+# Publishing is a deliberate act: tag a version, the tag publishes it.
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required for npm provenance, so the tarball can be traced back to this workflow.
+      id-token: write
+    env:
+      CCTAP_NOTIFY: 'off'
+      CCTAP_NO_EXEC: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # Trusted publishing (OIDC, no token anywhere) needs npm 11.5+. Node 24 bundles
+      # it; the upgrade keeps us on the latest OIDC fixes. CI covers the node 20 floor.
+      - run: npm install -g npm@latest
+
+      - run: npm publish --provenance --access public
