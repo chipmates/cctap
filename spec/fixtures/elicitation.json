@@ -1,0 +1,30 @@
+{
+  "name": "elicitation",
+  "description": "Question dialogs (elicitation_dialog) and agent_needs_input count as permission_wait; responses and user prompts clear them; agent_completed is upgrade-only.",
+  "events": [
+    { "ts": 1000,  "sessionId": "s1", "event": "SessionStart", "source": "startup", "cwd": "/repos/authsvc" },
+    { "ts": 2000,  "sessionId": "s1", "event": "UserPromptSubmit" },
+    { "ts": 3000,  "sessionId": "s1", "event": "PreToolUse", "toolName": "AskUserQuestion" },
+    { "ts": 4000,  "sessionId": "s1", "event": "Notification", "notif": "elicitation_dialog", "message": "Claude is asking you a question" },
+    { "ts": 5000,  "sessionId": "s1", "event": "Notification", "notif": "elicitation_response" },
+    { "ts": 6000,  "sessionId": "s1", "event": "Stop" },
+    { "ts": 7000,  "sessionId": "s1", "event": "UserPromptSubmit" },
+    { "ts": 8000,  "sessionId": "s1", "event": "Notification", "notif": "agent_needs_input", "message": "An agent needs your input" },
+    { "ts": 9000,  "sessionId": "s1", "event": "UserPromptSubmit" },
+    { "ts": 10000, "sessionId": "s1", "event": "Stop" },
+    { "ts": 11000, "sessionId": "s1", "event": "Notification", "notif": "agent_completed", "message": "Agent finished" }
+  ],
+  "expect": [
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "permission_wait" },
+    { "s1": "working" },
+    { "s1": "your_turn" },
+    { "s1": "working" },
+    { "s1": "permission_wait" },
+    { "s1": "working" },
+    { "s1": "your_turn" },
+    { "s1": "your_turn" }
+  ]
+}
