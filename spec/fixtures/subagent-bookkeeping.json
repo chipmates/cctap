@@ -1,0 +1,46 @@
+{
+  "name": "subagent-bookkeeping",
+  "description": "R1 by identity: a duplicate SubagentStop (s1), a SubagentStop for an id that never started (s2), and a duplicate SubagentStart (s3) must all be no-ops. Each session ends at true tree rest, so none of them reports a finished turn early or spins forever after one.",
+  "events": [
+    { "ts": 1000,  "sessionId": "s1", "event": "SessionStart", "source": "startup", "cwd": "/repos/authsvc" },
+    { "ts": 2000,  "sessionId": "s1", "event": "SubagentStart", "agentId": "a1" },
+    { "ts": 3000,  "sessionId": "s1", "event": "SubagentStart", "agentId": "a2" },
+    { "ts": 4000,  "sessionId": "s1", "event": "Stop" },
+    { "ts": 5000,  "sessionId": "s1", "event": "SubagentStop", "agentId": "a1" },
+    { "ts": 6000,  "sessionId": "s1", "event": "SubagentStop", "agentId": "a1" },
+    { "ts": 7000,  "sessionId": "s1", "event": "SubagentStop", "agentId": "a2" },
+
+    { "ts": 8000,  "sessionId": "s2", "event": "SessionStart", "source": "startup", "cwd": "/repos/blog" },
+    { "ts": 9000,  "sessionId": "s2", "event": "SubagentStart", "agentId": "b1" },
+    { "ts": 10000, "sessionId": "s2", "event": "Stop" },
+    { "ts": 11000, "sessionId": "s2", "event": "SubagentStop", "agentId": "ghost" },
+    { "ts": 12000, "sessionId": "s2", "event": "SubagentStop", "agentId": "b1" },
+
+    { "ts": 13000, "sessionId": "s3", "event": "SessionStart", "source": "startup", "cwd": "/repos/infra" },
+    { "ts": 14000, "sessionId": "s3", "event": "SubagentStart", "agentId": "c1" },
+    { "ts": 15000, "sessionId": "s3", "event": "SubagentStart", "agentId": "c1" },
+    { "ts": 16000, "sessionId": "s3", "event": "Stop" },
+    { "ts": 17000, "sessionId": "s3", "event": "SubagentStop", "agentId": "c1" }
+  ],
+  "expect": [
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "your_turn" },
+
+    { "s1": "your_turn", "s2": "working" },
+    { "s1": "your_turn", "s2": "working" },
+    { "s1": "your_turn", "s2": "working" },
+    { "s1": "your_turn", "s2": "working" },
+    { "s1": "your_turn", "s2": "your_turn" },
+
+    { "s2": "your_turn", "s3": "working" },
+    { "s2": "your_turn", "s3": "working" },
+    { "s2": "your_turn", "s3": "working" },
+    { "s2": "your_turn", "s3": "working" },
+    { "s2": "your_turn", "s3": "your_turn" }
+  ]
+}

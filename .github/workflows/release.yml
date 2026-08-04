@@ -1,0 +1,126 @@
+name: Release
+
+# Publishing is a deliberate act: tag a version, the tag publishes it.
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # Required for npm provenance, so the tarball can be traced back to this workflow.
+      id-token: write
+    outputs:
+      version: ${{ steps.manifest.outputs.version }}
+      prerelease: ${{ steps.manifest.outputs.prerelease }}
+    env:
+      CCTAP_NOTIFY: 'off'
+      CCTAP_NO_EXEC: '1'
+    steps:
+      # Actions are pinned to commit SHAs. A tag can be repointed at new code, a commit cannot.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # No version input: the action reads packageManager from package.json, and refuses
+      # to run when both name a version.
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      # The tag is the whole input to a release, so it has to agree with the manifest
+      # before anything else runs. A `-` in the version marks it a prerelease throughout.
+      - name: Check the tag against the manifest
+        id: manifest
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "$version" != "${GITHUB_REF_NAME#v}" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+          prerelease=false
+          case "$version" in *-*) prerelease=true ;; esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # `npm publish` fires prepack, which rebuilds dist, so the tarball is not literally
+      # the bundle the tests just ran against. Rebuild it here and compare hashes: same
+      # bytes, or the release stops before anything ships.
+      - name: Publish rebuild matches the tested bundles
+        run: |
+          find dist -type f -name '*.mjs' | sort | xargs sha256sum > "$RUNNER_TEMP/tested.sha256"
+          pnpm build
+          sha256sum -c "$RUNNER_TEMP/tested.sha256"
+
+      # A tag can land twice, and an old version can be tagged late. Either way the version
+      # is already on the registry, and a green skip beats a failed run for a no-op.
+      - name: Skip the publish when the version is already on npm
+        id: registry
+        env:
+          VERSION: ${{ steps.manifest.outputs.version }}
+        run: |
+          published=$(npm view "@chipmates/cctap@$VERSION" version 2>/dev/null || true)
+          if [ -n "$published" ]; then
+            echo "::notice::@chipmates/cctap@$VERSION is already published, skipping publish"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Trusted publishing (OIDC, no token anywhere) needs npm 11.5+. Node 24 bundles it;
+      # pinning the major keeps the OIDC fixes without inheriting the next major on a
+      # release day. CI covers the node 22 floor.
+      - if: steps.registry.outputs.publish == 'true'
+        run: npm install -g npm@11
+
+      # A prerelease goes to the `next` dist-tag, so a plain install keeps resolving to
+      # the last stable version.
+      - name: Publish
+        if: steps.registry.outputs.publish == 'true'
+        env:
+          PRERELEASE: ${{ steps.manifest.outputs.prerelease }}
+        run: |
+          if [ "$PRERELEASE" = 'true' ]; then
+            npm publish --provenance --access public --tag next
+          else
+            npm publish --provenance --access public
+          fi
+
+  release:
+    name: GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # The only job that writes anything, and all it writes is this tag's release.
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The changelog section for this version is the release body. A missing section is
+      # not worth failing a release that already published, so the body comes out empty.
+      - name: Take the release notes from the changelog
+        env:
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          awk -v heading="## [$VERSION]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::notice::no changelog section for $VERSION, the release body stays empty"
+          fi
+
+      - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          tag_name: ${{ github.ref_name }}
+          body_path: release-notes.md
+          prerelease: ${{ needs.publish.outputs.prerelease }}
