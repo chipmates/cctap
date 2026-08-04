@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Nothing in CI writes: no releases, no packages, no commits back.
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    # The suite runs in seconds; this is the backstop for a wedged runner.
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [22, 24]
+    env:
+      # No test may fire a desktop banner or spawn an external command.
+      CCTAP_NOTIFY: 'off'
+      CCTAP_NO_EXEC: '1'
+      # Hosted runners are 2-core and cold-start node several times slower than a laptop,
+      # so the waits that mean "a daemon should be up by now" get room. Local runs stay
+      # at 1: this is headroom for a slow machine, never cover for a race.
+      CCTAP_TEST_SLACK: '4'
+    steps:
+      # Actions are pinned to commit SHAs. A tag can be repointed at new code, a commit cannot.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # No version input: the action reads packageManager from package.json, and refuses
+      # to run when both name a version.
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+  reproducible:
+    name: reproducible build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - run: pnpm install --frozen-lockfile
+
+      # The trust claim is that anyone can rebuild the published bundles and get the same
+      # bytes. Two builds of the same source, hashed and compared, is that claim under test.
+      - name: Build, wipe, rebuild, compare hashes
+        run: |
+          pnpm build
+          find dist -type f -name '*.mjs' | sort | xargs sha256sum > "$RUNNER_TEMP/first.sha256"
+          rm -rf dist
+          pnpm build
+          sha256sum -c "$RUNNER_TEMP/first.sha256"

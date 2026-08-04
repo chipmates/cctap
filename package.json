@@ -1,0 +1,58 @@
+{
+  "name": "@chipmates/cctap",
+  "version": "0.1.6",
+  "description": "Terminal-native attention router for parallel Claude Code sessions. One glyph per session, and one keypress to the one that needs you.",
+  "keywords": [
+    "claude-code",
+    "claude",
+    "hooks",
+    "tmux",
+    "terminal",
+    "notifications",
+    "attention",
+    "agents"
+  ],
+  "homepage": "https://github.com/chipmates/cctap#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chipmates/cctap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/chipmates/cctap/issues"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "packageManager": "pnpm@8.15.5",
+  "engines": {
+    "node": ">=22"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "bin": {
+    "cctap": "dist/cctap.mjs"
+  },
+  "files": [
+    "dist/cctap.mjs",
+    "dist/daemon.mjs",
+    "dist/hook-forward.mjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/build.mjs && node scripts/test.mjs",
+    "typecheck": "tsc --noEmit",
+    "prepack": "node scripts/build.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2"
+  }
+}

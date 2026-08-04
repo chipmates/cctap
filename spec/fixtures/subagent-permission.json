@@ -1,0 +1,36 @@
+{
+  "name": "subagent-permission",
+  "description": "R1: subagent events never touch main state; blocked subagents drive displayState; PermissionDenied and SubagentStop unblock.",
+  "events": [
+    { "ts": 1000,  "sessionId": "s1", "event": "SessionStart", "source": "startup", "cwd": "/repos/authsvc" },
+    { "ts": 2000,  "sessionId": "s1", "event": "UserPromptSubmit" },
+    { "ts": 3000,  "sessionId": "s1", "event": "PreToolUse", "toolName": "Task" },
+    { "ts": 4000,  "sessionId": "s1", "event": "SubagentStart", "agentId": "a1" },
+    { "ts": 5000,  "sessionId": "s1", "event": "SubagentStart", "agentId": "a2" },
+    { "ts": 6000,  "sessionId": "s1", "event": "PreToolUse", "agentId": "a1", "toolName": "Read" },
+    { "ts": 7000,  "sessionId": "s1", "event": "Notification", "notif": "permission_prompt", "agentId": "a1", "message": "Subagent needs permission to use Bash" },
+    { "ts": 8000,  "sessionId": "s1", "event": "PreToolUse", "agentId": "a2", "toolName": "Grep" },
+    { "ts": 9000,  "sessionId": "s1", "event": "PreToolUse", "agentId": "a1", "toolName": "Bash" },
+    { "ts": 10000, "sessionId": "s1", "event": "Notification", "notif": "permission_prompt", "agentId": "a2", "message": "Subagent needs permission to use Write" },
+    { "ts": 11000, "sessionId": "s1", "event": "PermissionDenied", "agentId": "a2" },
+    { "ts": 12000, "sessionId": "s1", "event": "SubagentStop", "agentId": "a1" },
+    { "ts": 13000, "sessionId": "s1", "event": "SubagentStop", "agentId": "a2" },
+    { "ts": 14000, "sessionId": "s1", "event": "Stop" }
+  ],
+  "expect": [
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "permission_wait" },
+    { "s1": "permission_wait" },
+    { "s1": "working" },
+    { "s1": "permission_wait" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "working" },
+    { "s1": "your_turn" }
+  ]
+}

@@ -1,0 +1,10 @@
+# The repo is 2-space, LF, UTF-8, newline at end of file. This says so to the editor.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
